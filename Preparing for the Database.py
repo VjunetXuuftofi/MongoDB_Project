@@ -86,6 +86,7 @@ should be turned into
 "node_refs": ["305896090", "1719825889"]
 """
 
+import Improving_Street_Names
 
 lower = re.compile(r'^([a-z]|_)*$')
 lower_colon = re.compile(r'^([a-z]|_)*:([a-z]|_)*$')
@@ -94,7 +95,7 @@ problemchars = re.compile(r'[=\+/&<>;\'"\?%#$@\,\. \t\r\n]')
 CREATED = [ "version", "changeset", "timestamp", "user", "uid"]
 
 
-def shape_element(element):
+def shape_element(element, change_street_name_dict):
     node = {'created' : {}, 'pos' : []}
     if element.tag == "node" or element.tag == "way":
         node['type'] = element.tag
@@ -144,11 +145,18 @@ def shape_element(element):
                         issue = False
                         continue
                     if address_key != '':
-                        try:
-                            node['address'][address_key] = row.attrib[attribute]
-                        except:
-                            node['address'] = {}
-                            node['address'][address_key] = row.attrib[attribute]
+                        if row.attrib[attribute] in change_street_name_dict: #this will make sure that the street names are edited properly
+                            try:
+                                node['address'][address_key] = change_street_name_dict[row.attrib[attribute]]
+                            except:
+                                node['address'] = {}
+                                node['address'][address_key] = change_street_name_dict[row.attrib[attribute]]
+                        else:
+                            try:
+                                node['address'][address_key] = row.attrib[attribute]
+                            except:
+                                node['address'] = {}
+                                node['address'][address_key] = row.attrib[attribute]
                         continue
                     if key != '':
                         node[key] = row.attrib[attribute]
@@ -161,17 +169,17 @@ def shape_element(element):
 def process_map(file_in, pretty = False):
     # You do not need to change this file
     file_out = "{0}.json".format(file_in)
+    change_street_name_dict = Improving_Street_Names.modify_names() #provides the mapping to change street names
     data = []
     with codecs.open(file_out, "w") as fo:
         for _, element in ET.iterparse(file_in):
-            el = shape_element(element)
+            el = shape_element(element, change_street_name_dict)
             if el:
                 data.append(el)
                 if pretty:
                     fo.write(json.dumps(el, indent=2)+"\n")
                 else:
                     fo.write(json.dumps(el) + "\n")
-    pprint.pprint(data)
     return data
 
 process_map("map")

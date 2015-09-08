@@ -78,18 +78,17 @@ def update_name(name, mapping):
         name += mapping[street_type[0]]
         return name
     else:
-        return None
+        return name
 
 
 def modify_names():
-    st_types = audit(OSMFILE)
+    st_types = dict(audit("map"))
     dictionary = {}
-    for st_type, ways in st_types.iteritems():
-        for name in ways:
+    for ways in st_types:
+        for name in st_types[ways]:
             better_name = update_name(name, mapping)
             dictionary[name] = better_name
-    pprint.pprint(dictionary)
-
+    return dictionary
 
 if __name__ == '__main__':
-    modify_names()
+    print(modify_names())
